@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeSentinel | Enterprise Code Security & Automated Refactoring</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Top Application Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="app-symbol">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="brand-block">
+        <span class="app-name">CodeSentinel</span>
+        <span class="app-version">v1.2.0</span>
+        <span class="app-env">production</span>
+      </div>
+      <div class="nav-divider"></div>
+      <div class="header-breadcrumb">
+        <span class="crumb-root">workspace</span>
+        <span class="crumb-slash">/</span>
+        <span class="crumb-item">analysis</span>
+        <span class="crumb-slash">/</span>
+        <span class="crumb-file" id="activeFileName">solution.py</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="program-affiliation">
+        <span class="affil-tag">IBM SkillsBuild</span>
+        <span class="affil-dot">•</span>
+        <span class="affil-tag">Hacktiv8</span>
+      </div>
+
+      <div class="control-select-wrap">
+        <label for="providerSelect" class="sr-only">Analysis Engine</label>
+        <select id="providerSelect" class="control-select">
+          <option value="built-in">Deterministic Heuristic Engine (Static AST)</option>
+          <option value="gemini">Google Gemini 1.5 Flash</option>
+          <option value="openai">OpenAI GPT-4o-mini</option>
+        </select>
+      </div>
+
+      <button id="btnExportMenu" class="btn-subtle" onclick="exportReportMarkdown()" title="Export Markdown Audit Report">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Report</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sub-Header Command Bar -->
+  <div class="command-bar">
+    <div class="command-left">
+      <div class="preset-group">
+        <span class="preset-label">Test Suites:</span>
+        <button class="preset-chip" onclick="loadSample('vulnerable_auth.py')">vulnerable_auth.py</button>
+        <button class="preset-chip" onclick="loadSample('messy_analytics.py')">messy_analytics.py</button>
+      </div>
+    </div>
+
+    <div class="command-right">
+      <div class="pipeline-status-strip" id="pipelineStatusStrip">
+        <span class="status-indicator-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">System Ready</span>
+      </div>
+
+      <button id="btnAnalyze" class="btn-primary" onclick="runPipeline()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <span>Run Code Audit</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Agent Execution Phase Bar -->
+  <div class="agent-rail">
+    <div class="agent-node" id="node-orch">
+      <span class="node-num">01</span>
+      <span class="node-label">Orchestrator</span>
+      <span class="node-badge" id="badge-orch">STANDBY</span>
+    </div>
+    <div class="rail-line"></div>
+    <div class="agent-node" id="node-quality">
+      <span class="node-num">02</span>
+      <span class="node-label">QualitySentinel</span>
+      <span class="node-badge" id="badge-quality">STANDBY</span>
+    </div>
+    <div class="rail-line"></div>
+    <div class="agent-node" id="node-sec">
+      <span class="node-num">03</span>
+      <span class="node-label">SecuritySentinel</span>
+      <span class="node-badge" id="badge-sec">STANDBY</span>
+    </div>
+    <div class="rail-line"></div>
+    <div class="agent-node" id="node-refactor">
+      <span class="node-num">04</span>
+      <span class="node-label">RefactorSentinel</span>
+      <span class="node-badge" id="badge-refactor">STANDBY</span>
+    </div>
+    <div class="rail-line"></div>
+    <div class="agent-node" id="node-test">
+      <span class="node-num">05</span>
+      <span class="node-label">TestSentinel</span>
+      <span class="node-badge" id="badge-test">STANDBY</span>
+    </div>
+  </div>
+
+  <!-- Main Work Surface -->
+  <main class="workbench">
+    <!-- Left Pane: Code Editor -->
+    <section class="pane pane-editor">
+      <div class="pane-bar">
+        <div class="pane-bar-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>Source Code</span>
+          <span class="lang-tag">python</span>
+        </div>
+        <div class="pane-bar-tools">
+          <span id="editorStats" class="stat-counter">0 lines</span>
+          <button class="icon-btn" onclick="clearEditor()" title="Clear Editor">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="editor-surface">
+        <textarea id="codeInput" class="code-textarea" spellcheck="false" placeholder="# Paste or write Python code here to begin analysis..."></textarea>
+      </div>
+    </section>
+
+    <!-- Right Pane: Analysis & Diagnostics Deck -->
+    <section class="pane pane-diagnostics">
+      <!-- KPI Metric Row -->
+      <div class="metrics-deck">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Security Index</span>
+            <span class="metric-sub">OWASP / CWE</span>
+          </div>
+          <div class="metric-val" id="metricSec">--</div>
+          <div class="metric-progress-track">
+            <div class="metric-progress-bar" id="barSec" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Maintainability</span>
+            <span class="metric-sub">Clean Code Index</span>
+          </div>
+          <div class="metric-val" id="metricMaint">--</div>
+          <div class="metric-progress-track">
+            <div class="metric-progress-bar" id="barMaint" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Complexity</span>
+            <span class="metric-sub">Cyclomatic V(G)</span>
+          </div>
+          <div class="metric-val" id="metricComp">--</div>
+          <div class="metric-progress-track">
+            <div class="metric-progress-bar" id="barComp" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Composite Score</span>
+            <span class="metric-sub">Overall Health</span>
+          </div>
+          <div class="metric-val metric-val-hero" id="overallScore">--</div>
+          <div class="metric-progress-track">
+            <div class="metric-progress-bar" id="barOverall" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segmented Control Tabs -->
+      <nav class="segment-tabs">
+        <button class="tab-link active" onclick="switchTab('findings')">
+          <span>Security & Quality Findings</span>
+          <span class="tab-pill" id="findingsCount">0</span>
+        </button>
+        <button class="tab-link" onclick="switchTab('diff')">
+          <span>Unified Diff Patch</span>
+        </button>
+        <button class="tab-link" onclick="switchTab('tests')">
+          <span>Automated Unit Tests</span>
+        </button>
+        <button class="tab-link" onclick="switchTab('trace')">
+          <span>Agent Audit Trail</span>
+        </button>
+        <button class="tab-link" onclick="switchTab('summary')">
+          <span>Executive Brief</span>
+        </button>
+      </nav>
+
+      <!-- Tab Viewports -->
+      <div class="viewport-deck">
+        <!-- Tab 1: Findings Table -->
+        <div class="tab-pane active" id="tab-findings">
+          <div id="findingsEmpty" class="panel-empty">
+            <div class="empty-icon-wrap">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <div class="empty-title">No Audit Findings Generated</div>
+            <div class="empty-subtitle">Load a test sample or supply source code, then execute the multi-agent pipeline.</div>
+          </div>
+
+          <div id="findingsContainer" class="findings-table-wrap" style="display: none;">
+            <table class="findings-table">
+              <thead>
+                <tr>
+                  <th style="width: 90px;">Severity</th>
+                  <th style="width: 100px;">Rule ID</th>
+                  <th>Observation & Impact</th>
+                  <th style="width: 70px;">Line</th>
+                </tr>
+              </thead>
+              <tbody id="findingsTbody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 2: Unified Diff -->
+        <div class="tab-pane" id="tab-diff">
+          <div class="pane-action-bar">
+            <span class="action-bar-label">Production Refactored Code (Patch Applied)</span>
+            <button class="btn-subtle" onclick="copyRefactoredCode()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy Code</span>
+            </button>
+          </div>
+          <div class="diff-viewer">
+            <pre class="diff-viewport" id="diffDisplay"><code># Awaiting code audit execution...</code></pre>
+          </div>
+
+          <div class="pane-action-bar" style="margin-top: 14px;">
+            <span class="action-bar-label">Refactored Clean Code</span>
+          </div>
+          <div class="diff-viewer">
+            <pre class="code-viewport"><code id="refactoredCodeDisplay"># Clean refactored output will be rendered here...</code></pre>
+          </div>
+        </div>
+
+        <!-- Tab 3: Unit Tests -->
+        <div class="tab-pane" id="tab-tests">
+          <div class="pane-action-bar">
+            <div class="action-bar-meta">
+              <span class="action-bar-label">Synthesized Pytest Suite</span>
+              <span class="badge-framework" id="testCoverageBadge">0 Cases</span>
+            </div>
+            <button id="btnRunSandbox" class="btn-secondary" onclick="runSandboxTests()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Execute Sandbox Tests</span>
+            </button>
+          </div>
+          <pre class="code-viewport"><code id="testCodeDisplay"># Synthesized test functions will be generated here...</code></pre>
+
+          <div class="terminal-card" id="sandboxCard" style="display: none;">
+            <div class="terminal-bar">
+              <div class="terminal-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="terminal-title">Sandbox Execution Output</div>
+              <div class="terminal-timing" id="sandboxDuration">0 ms</div>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-status-row">
+                <span>Test Status: <strong id="sandboxStatus" class="status-pass">PASS</strong></span>
+              </div>
+              <pre class="terminal-output" id="sandboxOutput"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Agent Trace Logs -->
+        <div class="tab-pane" id="tab-trace">
+          <div class="trace-deck" id="traceContainer">
+            <div class="panel-empty">
+              <div class="empty-title">No Active Agent Logs</div>
+              <div class="empty-subtitle">Agent handoffs, AST parsing traces, and decision logs will record here.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Executive Brief -->
+        <div class="tab-pane" id="tab-summary">
+          <div class="executive-card">
+            <div class="exec-header">
+              <div class="exec-title">Security & Quality Evaluation Report</div>
+              <div class="exec-meta">Generated by MasterOrchestrator</div>
+            </div>
+            <div class="exec-body" id="summaryContent">
+              <p class="text-muted">Awaiting analysis pipeline completion.</p>
+            </div>
+            <div class="exec-footer">
+              <button class="btn-subtle" onclick="exportReportJSON()">Download JSON Diagnostics</button>
+              <button class="btn-secondary" onclick="exportReportMarkdown()">Download Compliance Report (.md)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-left">
+      <span>CodeSentinel Platform</span>
+      <span class="footer-sep">/</span>
+      <span>IBM SkillsBuild University Education Capstone Project</span>
+    </div>
+    <div class="footer-right">
+      <span>Curriculum: IT - AI Agent for Programming</span>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
