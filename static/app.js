@@ -183,8 +183,8 @@ function renderAnalysis(data) {
     findingsContainer.style.display = "none";
     findingsEmpty.style.display = "block";
     findingsEmpty.innerHTML = `
-      <div class="empty-title">All Quality & Security Gates Passed</div>
-      <div class="empty-subtitle">No critical flaws, CWE vulnerabilities, or PEP 8 code smells detected.</div>
+      <div class="empty-title">Semua Standar Kualitas & Keamanan Lolos!</div>
+      <div class="empty-subtitle">Tidak ditemukan celah kritis OWASP, CWE, maupun pelanggaran gaya penulisan PEP 8.</div>
     `;
   } else {
     findingsEmpty.style.display = "none";
@@ -198,7 +198,7 @@ function renderAnalysis(data) {
         <td>
           <div class="finding-title-row">${f.title}</div>
           <div class="finding-desc-row">${f.description}</div>
-          <div class="finding-remediation">Remediation: ${f.suggestion}</div>
+          <div class="finding-remediation">💡 <strong>Rekomendasi Solusi:</strong> ${f.suggestion}</div>
         </td>
         <td><span class="finding-line-tag">${f.line_number ? `L${f.line_number}` : 'N/A'}</span></td>
       `;
@@ -212,7 +212,7 @@ function renderAnalysis(data) {
 
   // 4. Test Suite
   document.getElementById("testCodeDisplay").textContent = data.test_suite.test_code;
-  document.getElementById("testCoverageBadge").textContent = `${data.test_suite.test_cases_count} Test Cases`;
+  document.getElementById("testCoverageBadge").textContent = `${data.test_suite.test_cases_count} Kasus Uji`;
   document.getElementById("sandboxCard").style.display = "none";
 
   // 5. Agent Trace
@@ -225,7 +225,7 @@ function renderAnalysis(data) {
 function renderDiffView(diffPatch) {
   const diffDisplay = document.getElementById("diffDisplay");
   if (!diffPatch || diffPatch.startsWith("No modifications")) {
-    diffDisplay.innerHTML = `<code>No diff generated (code matches target standards).</code>`;
+    diffDisplay.innerHTML = `<code>Kode sudah bersih dan memenuhi standar kualitas (tidak memerlukan perubahan).</code>`;
     return;
   }
 
@@ -264,19 +264,20 @@ function renderAuditTrail(logs) {
 
 function renderExecutiveBrief(data) {
   const container = document.getElementById("summaryContent");
+  const isApproved = data.scores.overall >= 80;
   container.innerHTML = `
     <div style="margin-bottom: 12px;">
-      <strong>Evaluation Status:</strong> 
-      <span style="color: ${data.scores.overall >= 80 ? 'var(--color-success)' : 'var(--color-critical)'}; font-weight: 600;">
-        ${data.scores.overall >= 80 ? 'APPROVED FOR DEPLOYMENT' : 'ACTION REQUIRED (REMEDIATION PENDING)'}
+      <strong>Status Evaluasi:</strong> 
+      <span style="color: ${isApproved ? 'var(--color-success)' : 'var(--color-critical)'}; font-weight: 600;">
+        ${isApproved ? 'DISETUJUI UNTUK PRODUCTION (LAYAK RILIS)' : 'PERLU PERBAIKAN (CELAH RISIKO DITEMUKAN)'}
       </span>
     </div>
-    <p>Overall quality index scored at <strong>${data.scores.overall}/100</strong> across four assessment gates:</p>
+    <p>Skor indeks kesehatan kode mencapai <strong>${data.scores.overall}/100</strong> berdasarkan empat gerbang evaluasi:</p>
     <ul>
-      <li><strong>Security Posture (${data.scores.security}/100):</strong> Evaluated for OWASP Top 10 vulnerabilities, credential exposure, and dangerous execution.</li>
-      <li><strong>Maintainability (${data.scores.maintainability}/100):</strong> Evaluated against PEP 8 clean code standards and architectural separation of concerns.</li>
-      <li><strong>Cyclomatic Complexity (${data.metrics.cyclomatic_complexity}):</strong> Identifies branching complexity and conditional depth.</li>
-      <li><strong>Synthesized Tests (${data.test_suite.test_cases_count} cases):</strong> Automated pytest suites generated covering edge cases and input validation.</li>
+      <li><strong>Postur Keamanan (${data.scores.security}/100):</strong> Mengevaluasi celah kerentanan OWASP Top 10, kebocoran kunci rahasia/token, dan eksekusi perintah berbahaya.</li>
+      <li><strong>Keterpeliharaan Kode (${data.scores.maintainability}/100):</strong> Menguji kepatuhan terhadap standar Clean Code PEP 8 dan pemisahan fungsi (*Single Responsibility*).</li>
+      <li><strong>Kompleksitas Siklomatis (${data.metrics.cyclomatic_complexity}):</strong> Mengukur kedalaman percabangan logika (*if/else/loops*) untuk mencegah kode rumit.</li>
+      <li><strong>Otomasi Pengujian (${data.test_suite.test_cases_count} skenario):</strong> Paket unit test pytest otomatis telah dirancang mencakup skenario normal, nilai ekstrem (*edge cases*), dan validasi input.</li>
     </ul>
   `;
 }

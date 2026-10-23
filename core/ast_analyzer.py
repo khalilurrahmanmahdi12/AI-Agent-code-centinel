@@ -50,8 +50,8 @@ class ASTAnalyzer:
 
         # 1. Check for hardcoded secrets / credentials / tokens
         secret_patterns = [
-            (r'(?i)(api[_-]?key|secret|password|token|auth_token)\s*=\s*["\']([a-zA-Z0-9_\-\.]{8,})["\']', "Hardcoded Secret / API Token"),
-            (r'(?i)AWS_[A-Z_]*KEY\s*=\s*["\'][^"\']+["\']', "Hardcoded AWS Credentials"),
+            (r'(?i)(api[_-]?key|secret|password|token|auth_token)\s*=\s*["\']([a-zA-Z0-9_\-\.]{8,})["\']', "Kredensial / Kunci API Tertulis Langsung (Hardcoded Secret)"),
+            (r'(?i)AWS_[A-Z_]*KEY\s*=\s*["\'][^"\']+["\']', "Kredensial AWS Tertulis Langsung"),
         ]
         for line_no, line in enumerate(self.lines, start=1):
             for pattern, title in secret_patterns:
@@ -61,17 +61,17 @@ class ASTAnalyzer:
                         category=FindingCategory.SECURITY,
                         severity=Severity.HIGH,
                         title=title,
-                        description=f"Potential sensitive credential or secret key exposed directly in code on line {line_no}.",
+                        description=f"Ditemukan token atau kunci rahasia sensitif yang ditulis langsung di dalam kode pada baris {line_no}. Ini berisiko tinggi bocor ke publik atau repositori bersama.",
                         line_number=line_no,
-                        suggestion="Use environment variables via `os.getenv()` or a secure secrets vault rather than hardcoding credentials.",
+                        suggestion="Pindahkan nilai rahasia ke environment variable menggunakan `os.getenv('NAMA_KEY')` atau simpan di file `.env` yang tidak di-commit ke Git.",
                         rule_id="SEC-001"
                     ))
 
         # 2. Check for SQL Injection (string concatenation/formatting in query executions)
         sql_patterns = [
-            (r'(?i)(execute|cursor\.execute)\s*\(\s*["\'].*(?:SELECT|INSERT|UPDATE|DELETE).*\%.*["\']', "Potential SQL Injection (Percent Formatting)"),
-            (r'(?i)(execute|cursor\.execute)\s*\(\s*f["\'].*(?:SELECT|INSERT|UPDATE|DELETE).*\{.*\}', "Potential SQL Injection (f-string)"),
-            (r'(?i)(execute|cursor\.execute)\s*\(\s*["\'].*(?:SELECT|INSERT|UPDATE|DELETE).*\+\s*\w+', "Potential SQL Injection (String Concatenation)")
+            (r'(?i)(execute|cursor\.execute)\s*\(\s*["\'].*(?:SELECT|INSERT|UPDATE|DELETE).*\%.*["\']', "Potensi Celah SQL Injection (Format String %)"),
+            (r'(?i)(execute|cursor\.execute)\s*\(\s*f["\'].*(?:SELECT|INSERT|UPDATE|DELETE).*\{.*\}', "Potensi Celah SQL Injection (f-string)"),
+            (r'(?i)(execute|cursor\.execute)\s*\(\s*["\'].*(?:SELECT|INSERT|UPDATE|DELETE).*\+\s*\w+', "Potensi Celah SQL Injection (Penggabungan String +)")
         ]
         for line_no, line in enumerate(self.lines, start=1):
             for pattern, title in sql_patterns:
@@ -80,9 +80,9 @@ class ASTAnalyzer:
                         category=FindingCategory.SECURITY,
                         severity=Severity.CRITICAL,
                         title=title,
-                        description=f"Direct SQL query construction using user-controlled string formatting found on line {line_no}.",
+                        description=f"Pembuatan query database SQL secara langsung menggabungkan input pengguna pada baris {line_no}. Penyerang dapat menyusupkan perintah berbahaya untuk membaca, mengubah, atau menghapus seluruh isi database.",
                         line_number=line_no,
-                        suggestion="Use parameterized queries (prepared statements) e.g., `cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))`.",
+                        suggestion="Gunakan parameterized queries (prepared statements), contohnya: `cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))`.",
                         rule_id="SEC-002"
                     ))
 
@@ -96,10 +96,10 @@ class ASTAnalyzer:
                             findings.append(AgentFinding(
                                 category=FindingCategory.SECURITY,
                                 severity=Severity.CRITICAL,
-                                title=f"Use of Dangerous Function `{node.func.id}()`",
-                                description=f"Dynamic code evaluation using `{node.func.id}()` can lead to arbitrary Remote Code Execution (RCE).",
+                                title=f"Penggunaan Fungsi Berbahaya `{node.func.id}()`",
+                                description=f"Eksekusi kode secara dinamis menggunakan `{node.func.id}()` pada baris {node.lineno} sangat berbahaya dan dapat memicu celah eksekusi kode jarak jauh (Remote Code Execution / RCE).",
                                 line_number=node.lineno,
-                                suggestion=f"Avoid `{node.func.id}()`. Use `ast.literal_eval()` for parsing literals or json.loads for JSON data.",
+                                suggestion=f"Hindari penggunaan `{node.func.id}()`. Gunakan `ast.literal_eval()` untuk memproses nilai literal atau `json.loads()` untuk membaca data JSON.",
                                 rule_id="SEC-003"
                             ))
                     # os.system()
@@ -108,10 +108,10 @@ class ASTAnalyzer:
                             findings.append(AgentFinding(
                                 category=FindingCategory.SECURITY,
                                 severity=Severity.HIGH,
-                                title="Insecure Shell Execution (`os.system`)",
-                                description="Calling `os.system` without proper sanitization can allow command injection.",
+                                title="Eksekusi Perintah Shell Berisiko (`os.system`)",
+                                description=f"Menjalankan perintah sistem operasi via `os.system` pada baris {node.lineno} tanpa sanitasi ketat dapat memicu Command Injection oleh pihak tidak berwenang.",
                                 line_number=node.lineno,
-                                suggestion="Use `subprocess.run([...], shell=False)` with arguments passed as an explicit list.",
+                                suggestion="Gunakan modul `subprocess.run([...], shell=False)` dengan memasukkan perintah dan argumennya dalam bentuk list string.",
                                 rule_id="SEC-004"
                             ))
                         # subprocess.run/call/Popen with shell=True
@@ -121,10 +121,10 @@ class ASTAnalyzer:
                                     findings.append(AgentFinding(
                                         category=FindingCategory.SECURITY,
                                         severity=Severity.HIGH,
-                                        title="Subprocess execution with `shell=True`",
-                                        description="Running subprocesses with `shell=True` exposes the application to command injection vulnerabilities.",
+                                        title="Eksekusi Subproses dengan `shell=True`",
+                                        description=f"Menjalankan subproses dengan opsi `shell=True` pada baris {node.lineno} membuka celah injeksi perintah shell.",
                                         line_number=node.lineno,
-                                        suggestion="Set `shell=False` and supply command arguments as a list of strings.",
+                                        suggestion="Ubah argumen menjadi `shell=False` dan kirimkan perintah beserta argumennya dalam format list string.",
                                         rule_id="SEC-005"
                                     ))
 
@@ -137,10 +137,10 @@ class ASTAnalyzer:
             findings.append(AgentFinding(
                 category=FindingCategory.CODE_QUALITY,
                 severity=Severity.CRITICAL,
-                title="Syntax Error",
-                description=self.syntax_error,
+                title="Kesalahan Sintaksis (Syntax Error)",
+                description=f"Terjadi kesalahan sintaksis: {self.syntax_error}",
                 line_number=1,
-                suggestion="Fix the syntax error to allow code execution and compilation.",
+                suggestion="Perbaiki kesalahan penulisan kode agar program dapat di-compile dan dijalankan dengan benar.",
                 rule_id="QUAL-000"
             ))
             return findings
@@ -155,10 +155,10 @@ class ASTAnalyzer:
                     findings.append(AgentFinding(
                         category=FindingCategory.CODE_QUALITY,
                         severity=Severity.MEDIUM,
-                        title="Bare `except:` Clause Detected",
-                        description=f"Bare except on line {node.lineno} catches all exceptions including SystemExit and KeyboardInterrupt.",
+                        title="Klausul `except:` Polos Tanpa Tipe Exception",
+                        description=f"Blok `except:` tanpa tipe error pada baris {node.lineno} akan menangkap semua kesalahan termasuk sinyal keluar sistem (SystemExit dan KeyboardInterrupt), sehingga menyulitkan proses debugging saat aplikasi bermasalah.",
                         line_number=node.lineno,
-                        suggestion="Specify precise exceptions e.g. `except (ValueError, KeyError) as e:` or at least `except Exception as e:`.",
+                        suggestion="Tentukan jenis error secara spesifik, contoh: `except (ValueError, KeyError) as e:` atau minimal `except Exception as e:`.",
                         rule_id="QUAL-001"
                     ))
 
@@ -170,10 +170,10 @@ class ASTAnalyzer:
                     findings.append(AgentFinding(
                         category=FindingCategory.MAINTAINABILITY,
                         severity=Severity.LOW,
-                        title=f"Function `{node.name}` is Too Long ({body_length} statements)",
-                        description=f"Function `{node.name}` at line {node.lineno} exceeds the recommended limit of 25 statements.",
+                        title=f"Fungsi `{node.name}` Terlalu Panjang ({body_length} baris kode)",
+                        description=f"Fungsi `{node.name}` pada baris {node.lineno} memiliki {body_length} baris pernyataan, melebihi batas ideal keterbacaan (maksimal 25 baris).",
                         line_number=node.lineno,
-                        suggestion="Decompose this function into smaller, single-responsibility helper functions.",
+                        suggestion="Pecah fungsi ini menjadi fungsi-fungsi pembantu (helper functions) yang lebih kecil sesuai prinsip Single Responsibility.",
                         rule_id="QUAL-002"
                     ))
 
@@ -182,10 +182,10 @@ class ASTAnalyzer:
                     findings.append(AgentFinding(
                         category=FindingCategory.MAINTAINABILITY,
                         severity=Severity.INFO,
-                        title=f"Missing Docstring in `{node.name}`",
-                        description=f"Function `{node.name}` does not have a docstring documenting its parameters, return values, or behavior.",
+                        title=f"Dokumentasi Docstring Belum Ada pada `{node.name}`",
+                        description=f"Fungsi `{node.name}` pada baris {node.lineno} belum memiliki docstring penjelas mengenai fungsi, parameter yang diterima, atau nilai yang dikembalikan.",
                         line_number=node.lineno,
-                        suggestion="Add Google-style or PEP 257 docstring explaining function intent and args.",
+                        suggestion="Tambahkan komentar docstring standar PEP 257 di awal fungsi untuk menjelaskan tujuan fungsi, argumen, dan return value.",
                         rule_id="QUAL-003"
                     ))
 
@@ -197,10 +197,10 @@ class ASTAnalyzer:
                         findings.append(AgentFinding(
                             category=FindingCategory.CODE_QUALITY,
                             severity=Severity.MEDIUM,
-                            title="Wildcard Import (`from module import *`)",
-                            description=f"Wildcard import on line {node.lineno} pollutes the global namespace and obfuscates dependency origins.",
+                            title="Impor Wildcard (`from module import *`)",
+                            description=f"Impor wildcard pada baris {node.lineno} mencemari namespace global dan menyamarkan asal-usul fungsi atau variabel yang digunakan.",
                             line_number=node.lineno,
-                            suggestion="Import only the specific classes or functions needed e.g., `from math import sqrt, pi`.",
+                            suggestion="Impor hanya fungsi atau kelas yang benar-benar digunakan, contoh: `from math import sqrt, pi`.",
                             rule_id="QUAL-004"
                         ))
 
@@ -209,14 +209,13 @@ class ASTAnalyzer:
             if isinstance(node, (ast.For, ast.While)):
                 for sub in ast.walk(node):
                     if isinstance(sub, ast.AugAssign) and isinstance(sub.op, ast.Add):
-                        # check if string
                         findings.append(AgentFinding(
                             category=FindingCategory.PERFORMANCE,
                             severity=Severity.LOW,
-                            title="String Concatenation in Loop (`+=`)",
-                            description=f"Iterative string concatenation inside a loop on line {sub.lineno} causes quadratic memory allocation.",
+                            title="Penggabungan Teks Berulang di Dalam Loop (`+=`)",
+                            description=f"Penggabungan string berulang kali di dalam loop pada baris {sub.lineno} menyebabkan alokasi memori yang boros (O(n²)).",
                             line_number=sub.lineno,
-                            suggestion="Collect strings into a list and join them using `''.join(items)` for linear performance.",
+                            suggestion="Kumpulkan teks ke dalam list lalu gabungkan sekaligus di akhir menggunakan `''.join(daftar_teks)` agar performa tetap cepat.",
                             rule_id="PERF-001"
                         ))
                         break

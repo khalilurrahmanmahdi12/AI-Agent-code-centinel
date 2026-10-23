@@ -143,7 +143,7 @@
       <div class="metrics-deck">
         <div class="metric-card">
           <div class="metric-header">
-            <span class="metric-title">Security Index</span>
+            <span class="metric-title">Indeks Keamanan</span>
             <span class="metric-sub">OWASP / CWE</span>
           </div>
           <div class="metric-val" id="metricSec">--</div>
@@ -154,7 +154,7 @@
 
         <div class="metric-card">
           <div class="metric-header">
-            <span class="metric-title">Maintainability</span>
+            <span class="metric-title">Keterpeliharaan</span>
             <span class="metric-sub">Clean Code Index</span>
           </div>
           <div class="metric-val" id="metricMaint">--</div>
@@ -165,8 +165,8 @@
 
         <div class="metric-card">
           <div class="metric-header">
-            <span class="metric-title">Complexity</span>
-            <span class="metric-sub">Cyclomatic V(G)</span>
+            <span class="metric-title">Kompleksitas</span>
+            <span class="metric-sub">Siklomatis V(G)</span>
           </div>
           <div class="metric-val" id="metricComp">--</div>
           <div class="metric-progress-track">
@@ -176,8 +176,8 @@
 
         <div class="metric-card">
           <div class="metric-header">
-            <span class="metric-title">Composite Score</span>
-            <span class="metric-sub">Overall Health</span>
+            <span class="metric-title">Skor Gabungan</span>
+            <span class="metric-sub">Kesehatan Kode</span>
           </div>
           <div class="metric-val metric-val-hero" id="overallScore">--</div>
           <div class="metric-progress-track">
@@ -189,20 +189,20 @@
       <!-- Segmented Control Tabs -->
       <nav class="segment-tabs">
         <button class="tab-link active" onclick="switchTab('findings')">
-          <span>Security & Quality Findings</span>
+          <span>Temuan Keamanan & Kualitas</span>
           <span class="tab-pill" id="findingsCount">0</span>
         </button>
         <button class="tab-link" onclick="switchTab('diff')">
-          <span>Unified Diff Patch</span>
+          <span>Patch Diff & Refaktorisasi</span>
         </button>
         <button class="tab-link" onclick="switchTab('tests')">
-          <span>Automated Unit Tests</span>
+          <span>Unit Test Otomatis</span>
         </button>
         <button class="tab-link" onclick="switchTab('trace')">
-          <span>Agent Audit Trail</span>
+          <span>Jejak Log Audit Agen</span>
         </button>
         <button class="tab-link" onclick="switchTab('summary')">
-          <span>Executive Brief</span>
+          <span>Ringkasan Laporan</span>
         </button>
       </nav>
 
@@ -214,18 +214,18 @@
             <div class="empty-icon-wrap">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
-            <div class="empty-title">No Audit Findings Generated</div>
-            <div class="empty-subtitle">Load a test sample or supply source code, then execute the multi-agent pipeline.</div>
+            <div class="empty-title">Belum Ada Temuan Audit</div>
+            <div class="empty-subtitle">Pilih salah satu sampel kode atau ketik kode Anda sendiri, lalu jalankan audit multi-agent.</div>
           </div>
 
           <div id="findingsContainer" class="findings-table-wrap" style="display: none;">
             <table class="findings-table">
               <thead>
                 <tr>
-                  <th style="width: 90px;">Severity</th>
-                  <th style="width: 100px;">Rule ID</th>
-                  <th>Observation & Impact</th>
-                  <th style="width: 70px;">Line</th>
+                  <th style="width: 90px;">Tingkat Risiko</th>
+                  <th style="width: 100px;">ID Aturan</th>
+                  <th>Temuan & Dampak Risiko</th>
+                  <th style="width: 70px;">Baris</th>
                 </tr>
               </thead>
               <tbody id="findingsTbody">
